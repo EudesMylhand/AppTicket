@@ -59,8 +59,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function handleFileUpload(event) {
+        resetPreview();
+        
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file) {
+            return;
+        }
         
         const fileExtension = file.name.split('.').pop().toLowerCase();
         
@@ -72,6 +76,12 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Format de fichier non supporté. Veuillez utiliser un fichier CSV, TXT, XLS ou XLSX.');
         }
     }
+
+    function resetPreview() {
+        currentData = null;
+        currentHeaders = null;
+        pagesContainer.innerHTML = '';
+    }
     
     function processCSVFile(file) {
         const reader = new FileReader();
@@ -79,20 +89,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const content = e.target.result;
             processCSV(content);
         };
+        reader.onerror = function() {
+            alert('Erreur lors de la lecture du fichier.');
+        };
         reader.readAsText(file);
     }
     
     function processExcelFile(file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-            
-            processExcelData(jsonData);
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                processExcelData(jsonData);
+            } catch (error) {
+                alert('Erreur lors du traitement du fichier Excel.');
+            }
+        };
+        reader.onerror = function() {
+            alert('Erreur lors de la lecture du fichier.');
         };
         reader.readAsArrayBuffer(file);
     }
@@ -106,7 +126,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Détection automatique du séparateur
         const separator = detectSeparator(dataLines[0]);
         const headers = dataLines[0].split(separator)
             .map(header => header.trim())
@@ -174,15 +193,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function generatePages(headers, data) {
+        const oldStyle = document.querySelector('style[data-dynamic-style]');
+        if (oldStyle) oldStyle.remove();
         
         pagesContainer.innerHTML = '';
         
-        if (data.length === 0) {
+        if (!data || data.length === 0) {
             pagesContainer.innerHTML = '<p>Aucune donnée à afficher.</p>';
             return;
         }
         
-        // Appliquer les paramètres
         const padding = `${paddingValue.value}${paddingUnit.value}`;
         const cellHeightVal = `${cellHeight.value}${cellHeightUnit.value}`;
         const fontSizeVal = `${fontSize.value}${fontSizeUnit.value}`;
@@ -192,8 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const itemsPerPage = 13 * 5;
         const totalPages = Math.ceil(data.length / itemsPerPage);
         
-        // Créer un style dynamique pour les cellules
         const style = document.createElement('style');
+        style.setAttribute('data-dynamic-style', 'true');
         style.textContent = `
             .page-table-container {
                 align-items: ${position === 'center' ? 'center' : position === 'left' ? 'flex-start' : 'flex-end'};
@@ -204,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 text-align: ${align};
             }
             td div {
-                margin-bottom: 3px;  /* Espace entre les lignes */
+                margin-bottom: 3px;
             }
         `;
         document.head.appendChild(style);
@@ -237,7 +257,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (dataIndex < pageData.length) {
                         const item = pageData[dataIndex];
                         let cellContent = '';
-                        // Pour chaque en-tête, ajoutez l'en-tête suivi d'un retour à la ligne puis de la valeur
                         headers.forEach(header => {
                             cellContent += `<div><strong>${header}:</strong><br>${item[header] || ''}</div>`;
                         });
@@ -276,44 +295,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         window.print();
     }
+
+    function beforePrint() {
+        document.body.style.margin = '0';
+        document.body.style.padding = '0';
+    }
     
-    // Générer une page vide au chargement
-    currentHeaders = ['IMSI', 'MSISDN', 'Status'];
-    currentData = Array(65).fill().map((_, i) => ({
-        IMSI:   ` 77936747${i}`,
-        MSISDN: `24205622040${i}`,
-        Status: i + 1
-    }));
-    generatePages(currentHeaders, currentData);
-
+    function afterPrint() {
+        document.body.style.margin = '';
+        document.body.style.padding = '';
+    }
     
+    if (window.matchMedia) {
+        const mediaQueryList = window.matchMedia('print');
+        mediaQueryList.addListener(mql => {
+            if (mql.matches) {
+                beforePrint();
+            } else {
+                afterPrint();
+            }
+        });
+    }
+    
+    window.onbeforeprint = beforePrint;
+    window.onafterprint = afterPrint;
 
-            function beforePrint() {
-            document.body.style.margin = '0';
-            document.body.style.padding = '0';
-        }
-        
-        function afterPrint() {
-            document.body.style.margin = '';
-            document.body.style.padding = '';
-        }
-        
-        if (window.matchMedia) {
-            const mediaQueryList = window.matchMedia('print');
-            mediaQueryList.addListener(mql => {
-                if (mql.matches) {
-                    beforePrint();
-                } else {
-                    afterPrint();
-                }
-            });
-        }
-        
-        window.onbeforeprint = beforePrint;
-        window.onafterprint = afterPrint;
-
-
+    // Ne pas générer de page vide au chargement
+    resetPreview();
 });
-
-
-
