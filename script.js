@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const fontSizeUnit = document.getElementById('fontSizeUnit');
     const tablePosition = document.getElementById('tablePosition');
     const textAlign = document.getElementById('textAlign');
+    // Add manage width cell 
+    const cellWidth = document.getElementById('cellWidth');
+    const cellWidthUnit = document.getElementById('cellWidthUnit');
     
     let currentData = null;
     let currentHeaders = null;
@@ -134,8 +137,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = [];
         for (let i = 1; i < dataLines.length; i++) {
             const values = dataLines[i].split(separator)
-                .map(value => value.trim())
-                .filter(value => value !== '');
+                .map(value => value.trim() + ' ')  // Ajout d'un espace après chaque valeur
+                .filter(value => value !== ' ');
             
             if (values.length === headers.length) {
                 const entry = {};
@@ -175,14 +178,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const headers = excelData[0].map(header => header.toString().trim());
         const data = [];
-        
+
         for (let i = 1; i < excelData.length; i++) {
             const values = excelData[i];
             if (!values || values.length === 0) continue;
             
             const entry = {};
             headers.forEach((header, index) => {
-                entry[header] = values[index] !== undefined ? values[index].toString() : '';
+                entry[header] = values[index] !== undefined ? values[index].toString().trim() + ' ' : ''; // Ajout d'un espace après chaque valeur
             });
             data.push(entry);
         }
@@ -192,6 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
         generatePages(headers, data);
     }
     
+    // Modifiez la fonction generatePages pour inclure la largeur des cellules
     function generatePages(headers, data) {
         const oldStyle = document.querySelector('style[data-dynamic-style]');
         if (oldStyle) oldStyle.remove();
@@ -205,6 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const padding = `${paddingValue.value}${paddingUnit.value}`;
         const cellHeightVal = `${cellHeight.value}${cellHeightUnit.value}`;
+        const cellWidthVal = `${cellWidth.value}${cellWidthUnit.value}`;
         const fontSizeVal = `${fontSize.value}${fontSizeUnit.value}`;
         const position = tablePosition.value;
         const align = textAlign.value;
@@ -220,6 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             td {
                 height: ${cellHeightVal};
+                width: ${cellWidthVal};
                 font-size: ${fontSizeVal};
                 text-align: ${align};
             }
@@ -258,16 +264,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         const item = pageData[dataIndex];
                         let cellContent = '';
                         headers.forEach(header => {
-                            cellContent += `<div><strong>${header}:</strong><br>${item[header] || ''}</div>`;
+                            // Modification ici: ne pas afficher la ligne si la valeur est vide
+                            if (item[header]) {
+                                cellContent += `<div><strong>${header}:</strong><br>${item[header]}</div>`;
+                            }
                         });
                         cell.innerHTML = cellContent;
                         dataIndex++;
                     } else {
-                        let cellContent = '';
-                        headers.forEach(header => {
-                            cellContent += `<div><strong>${header}:</strong><br></div>`;
-                        });
-                        cell.innerHTML = cellContent;
+                        // Cellule vide
+                        cell.innerHTML = '';
                     }
                     row.appendChild(cell);
                 }

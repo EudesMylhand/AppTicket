@@ -83,6 +83,8 @@ input, select {
     margin: 5px;
 }
 
+
+
 .upload-btn {
     background-color: #4CAF50;
 }
@@ -91,11 +93,34 @@ input, select {
     background-color: #45a049;
 }
 
-.print-btn {
+/* .print-btn {
     background-color: #2196F3;
     display: block;
     margin: 0 auto 20px;
+} */
+
+/* New correction */
+
+/* Nouveau conteneur pour le bouton d'impression */
+.print-btn-container {
+    text-align: left;
+    margin-bottom: 20px;
+    padding-left: 10px; /* Optionnel pour l'alignement */
 }
+
+/* Modification du style du bouton */
+.print-btn {
+    background-color: #2196F3;
+    display: inline-block;
+    margin: 0;
+    padding: 10px 25px;
+}
+
+.print-btn:hover {
+    background-color: #0b7dda;
+}
+
+/* ===========End Correction===================== */
 
 .print-btn:hover {
     background-color: #0b7dda;
@@ -154,12 +179,33 @@ input, select {
     justify-content: center;
 }
 
-table {
+/* table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
     height: 100%;
+} */
+/* ========================================== */
+/* Add modification table */
+/* Dans le CSS, ajoutez ou modifiez ces règles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* Important pour que la largeur des cellules soit respectée */
+    height: 100%;
 }
+
+td {
+    border: 1px solid #ddd;
+    padding: 5px;
+    vertical-align: middle;
+    word-break: break-word;
+    overflow: hidden; /* Empêche le débordement du contenu */
+    text-overflow: ellipsis; /* Ajoute des points de suspension si le texte est trop long */
+}
+
+
+/* ================================ */
 
 td {
     border: 1px solid #ddd;
