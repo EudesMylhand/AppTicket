@@ -284,13 +284,13 @@ document.addEventListener('DOMContentLoaded', function() {
             tableContainer.appendChild(table);
             pageContent.appendChild(tableContainer);
             
-            // const pageNumber = document.createElement('div');
+            const pageNumber = document.createElement('div');
             // pageNumber.className = 'page-number';
             // pageNumber.textContent = `Page ${pageNum + 1} sur ${totalPages}`;
             // pageContent.appendChild(pageNumber);
             
-            // page.appendChild(pageContent);
-            // pagesContainer.appendChild(page);
+            page.appendChild(pageContent);
+            pagesContainer.appendChild(page);
         }
     }
     
