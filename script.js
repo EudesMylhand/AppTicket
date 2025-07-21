@@ -284,13 +284,13 @@ document.addEventListener('DOMContentLoaded', function() {
             tableContainer.appendChild(table);
             pageContent.appendChild(tableContainer);
             
-            const pageNumber = document.createElement('div');
-            pageNumber.className = 'page-number';
-            pageNumber.textContent = `Page ${pageNum + 1} sur ${totalPages}`;
-            pageContent.appendChild(pageNumber);
+            // const pageNumber = document.createElement('div');
+            // pageNumber.className = 'page-number';
+            // pageNumber.textContent = `Page ${pageNum + 1} sur ${totalPages}`;
+            // pageContent.appendChild(pageNumber);
             
-            page.appendChild(pageContent);
-            pagesContainer.appendChild(page);
+            // page.appendChild(pageContent);
+            // pagesContainer.appendChild(page);
         }
     }
     
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (window.matchMedia) {
         const mediaQueryList = window.matchMedia('print');
-        mediaQueryList.addListener(mql => {
+        mediaQueryList.addEventListener(mql => {
             if (mql.matches) {
                 beforePrint();
             } else {
