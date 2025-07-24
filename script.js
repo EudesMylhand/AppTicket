@@ -16,6 +16,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const fontSizeUnit = document.getElementById('fontSizeUnit');
     const tablePosition = document.getElementById('tablePosition');
     const textAlign = document.getElementById('textAlign');
+    // Add Paramètre AXE
+    // Ajoutez ces lignes avec les autres paramètres configurables
+    const marginX = document.getElementById('marginX');
+    const marginXUnit = document.getElementById('marginXUnit');
+    const marginY = document.getElementById('marginY');
+    const marginYUnit = document.getElementById('marginYUnit');
+
     // Add manage width cell 
     const cellWidth = document.getElementById('cellWidth');
     const cellWidthUnit = document.getElementById('cellWidthUnit');
@@ -48,6 +55,19 @@ document.addEventListener('DOMContentLoaded', function() {
             handleFileUpload({ target: fileInput });
         }
     });
+
+    // MODIFICATION 3
+    function updateCSSVariables() {
+    document.documentElement.style.setProperty('--margin-x', `${marginX.value}${marginXUnit.value}`);
+    document.documentElement.style.setProperty('--margin-y', `${marginY.value}${marginYUnit.value}`);
+}
+
+    // Appelez cette fonction quand les marges changent
+    marginX.addEventListener('change', updateCSSVariables);
+    marginXUnit.addEventListener('change', updateCSSVariables);
+    marginY.addEventListener('change', updateCSSVariables);
+    marginYUnit.addEventListener('change', updateCSSVariables);
+    // =========================================
     
     function updateZoom() {
         const zoom = zoomLevel.value;
@@ -213,6 +233,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const fontSizeVal = `${fontSize.value}${fontSizeUnit.value}`;
         const position = tablePosition.value;
         const align = textAlign.value;
+
+         // Ajout des nouvelles marges
+        const marginXVal = `${marginX.value}${marginXUnit.value}`;
+        const marginYVal = `${marginY.value}${marginYUnit.value}`;
         
         const itemsPerPage = 13 * 5;
         const totalPages = Math.ceil(data.length / itemsPerPage);
@@ -220,18 +244,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const style = document.createElement('style');
         style.setAttribute('data-dynamic-style', 'true');
         style.textContent = `
-            .page-table-container {
-                align-items: ${position === 'center' ? 'center' : position === 'left' ? 'flex-start' : 'flex-end'};
-            }
-            td {
-                height: ${cellHeightVal};
-                width: ${cellWidthVal};
-                font-size: ${fontSizeVal};
-                text-align: ${align};
-            }
-            td div {
-                margin-bottom: 3px;
-            }
+        .page-table-container {
+            align-items: ${position === 'center' ? 'center' : position === 'left' ? 'flex-start' : 'flex-end'};
+            margin: ${marginYVal} ${marginXVal};
+        }
+        td {
+            height: ${cellHeightVal};
+            width: ${cellWidthVal};
+            font-size: ${fontSizeVal};
+            text-align: ${align};
+        }
+        td div {
+            margin-bottom: 3px;
+        }
         `;
         document.head.appendChild(style);
         
@@ -287,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const pageNumber = document.createElement('div');
             // pageNumber.className = 'page-number';
             // pageNumber.textContent = `Page ${pageNum + 1} sur ${totalPages}`;
-            // pageContent.appendChild(pageNumber);
+            pageContent.appendChild(pageNumber);
             
             page.appendChild(pageContent);
             pagesContainer.appendChild(page);

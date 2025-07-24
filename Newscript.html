@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisation CSV pour Impression</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @media print {
+            body, html {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 210mm;
+                height: 297mm;
+            }
+            
+            .page {
+                page-break-after: always;
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            .container {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .preview-section, .control-panel, .upload-section, .print-btn-container {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Visualisation CSV pour Impression</h1>
+        
+        <div class="control-panel">
+            <div class="control-group">
+                <label for="marginValue">Marge de la page:</label>
+                <div class="input-group">
+                    <input type="number" id="marginValue" value="1" min="0" max="5" step="0.1">
+                    <select id="marginUnit">
+                        <option value="cm">cm</option>
+                        <option value="px">px</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="paddingValue">Padding du contenu:</label>
+                <div class="input-group">
+                    <input type="number" id="paddingValue" value="1" min="0" max="5" step="0.1">
+                    <select id="paddingUnit">
+                        <option value="cm">cm</option>
+                        <option value="px">px</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="cellWidth">Largeur des cellules:</label>
+                <div class="input-group">
+                     <input type="number" id="cellWidth" value="4" min="1" max="10" step="0.1">
+                    <select id="cellWidthUnit">
+                        <option value="cm">cm</option>
+                        <option value="px">px</option>
+                    </select>
+                </div>
+            </div>
+                
+            <div class="control-group">
+                <label for="cellHeight">Hauteur des cellules:</label>
+                <div class="input-group">
+                    <input type="number" id="cellHeight" value="1.5" min="0.5" max="5" step="0.1">
+                    <select id="cellHeightUnit">
+                        <option value="cm">cm</option>
+                        <option value="px">px</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="fontSize">Taille de police:</label>
+                <div class="input-group">
+                    <input type="number" id="fontSize" value="7" min="6" max="10" step="1">
+                    <select id="fontSizeUnit">
+                        <option value="pt">pt</option>
+                        <option value="px">px</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="tablePosition">Position de la table:</label>
+                <select id="tablePosition">
+                    <option value="center">Centrée</option>
+                    <option value="left">Gauche</option>
+                    <option value="right">Droite</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="textAlign">Alignement du texte:</label>
+                <select id="textAlign">
+                    <option value="center">Centré</option>
+                    <option value="left">Gauche</option>
+                    <option value="right">Droite</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="upload-section" id="dropZone">
+            <label for="fileInput" class="btn upload-btn">Sélectionner un fichier</label>
+            <input type="file" id="fileInput" class="file-input" accept=".csv,.xls,.xlsx,.txt">
+            <p>ou glissez-déposez un fichier ici</p>
+            <p>Formats supportés: CSV, XLS, XLSX, TXT</p>
+        </div>
+
+        <div class="print-btn-container">
+            <button id="printButton" class="btn print-btn">Imprimer</button>
+        </div>
+        
+        <div class="preview-section">
+            <div class="preview-controls">
+                <h3>Prévisualisation</h3>
+                <p>Ajustez les paramètres pour personnaliser l'affichage.</p>
+                <div class="control-group" style="margin-top: 20px;">
+                    <label for="zoomLevel">Zoom:</label>
+                    <input type="range" id="zoomLevel" min="50" max="150" value="100" step="10">
+                    <div style="text-align: center;"><span id="zoomValue">100%</span></div>
+                </div>
+                <button id="applySettings" class="btn apply-btn">Appliquer les modifications</button>
+            </div>
+            
+            <div id="pagesContainer" class="pages-container"></div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('fileInput');
+        const printButton = document.getElementById('printButton');
+        const pagesContainer = document.getElementById('pagesContainer');
+        const applySettingsBtn = document.getElementById('applySettings');
+        const zoomLevel = document.getElementById('zoomLevel');
+        const zoomValue = document.getElementById('zoomValue');
+        const dropZone = document.getElementById('dropZone');
+        
+        // Paramètres configurables
+        const marginValue = document.getElementById('marginValue');
+        const marginUnit = document.getElementById('marginUnit');
+        const paddingValue = document.getElementById('paddingValue');
+        const paddingUnit = document.getElementById('paddingUnit');
+        const cellHeight = document.getElementById('cellHeight');
+        const cellHeightUnit = document.getElementById('cellHeightUnit');
+        const fontSize = document.getElementById('fontSize');
+        const fontSizeUnit = document.getElementById('fontSizeUnit');
+        const tablePosition = document.getElementById('tablePosition');
+        const textAlign = document.getElementById('textAlign');
+        const cellWidth = document.getElementById('cellWidth');
+        const cellWidthUnit = document.getElementById('cellWidthUnit');
+        
+        let currentData = null;
+        let currentHeaders = null;
+        
+        // Événements
+        fileInput.addEventListener('change', handleFileUpload);
+        printButton.addEventListener('click', printDocument);
+        applySettingsBtn.addEventListener('click', applySettings);
+        zoomLevel.addEventListener('input', updateZoom);
+        
+        // Drag and drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('highlight');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('highlight');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('highlight');
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileUpload({ target: fileInput });
+            }
+        });
+        
+        function updateZoom() {
+            const zoom = zoomLevel.value;
+            zoomValue.textContent = `${zoom}%`;
+            pagesContainer.style.zoom = `${zoom}%`;
+        }
+        
+        function applySettings() {
+            if (currentData && currentHeaders) {
+                generateTable(currentHeaders, currentData);
+            }
+        }
+        
+        function handleFileUpload(event) {
+            resetPreview();
+            
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+            
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            
+            if (fileExtension === 'csv' || fileExtension === 'txt') {
+                processCSVFile(file);
+            } else if (fileExtension === 'xls' || fileExtension === 'xlsx') {
+                processExcelFile(file);
+            } else {
+                alert('Format de fichier non supporté. Veuillez utiliser un fichier CSV, TXT, XLS ou XLSX.');
+            }
+        }
+
+        function resetPreview() {
+            currentData = null;
+            currentHeaders = null;
+            pagesContainer.innerHTML = '';
+        }
+        
+        function processCSVFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                processCSV(content);
+            };
+            reader.onerror = function() {
+                alert('Erreur lors de la lecture du fichier.');
+            };
+            reader.readAsText(file);
+        }
+        
+        function processExcelFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processExcelData(jsonData);
+                } catch (error) {
+                    alert('Erreur lors du traitement du fichier Excel.');
+                }
+            };
+            reader.onerror = function() {
+                alert('Erreur lors de la lecture du fichier.');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function processCSV(csvContent) {
+            const lines = csvContent.split('\n').filter(line => line.trim() !== '');
+            const dataLines = lines.filter(line => !line.startsWith('>'));
+            
+            if (dataLines.length === 0) {
+                alert('Aucune donnée trouvée dans le fichier.');
+                return;
+            }
+            
+            const separator = detectSeparator(dataLines[0]);
+            const headers = dataLines[0].split(separator)
+                .map(header => header.trim())
+                .filter(header => header !== '');
+            
+            const data = [];
+            for (let i = 1; i < dataLines.length; i++) {
+                const values = dataLines[i].split(separator)
+                    .map(value => value.trim() + ' ')  // Ajout d'un espace après chaque valeur
+                    .filter(value => value !== ' ');
+                
+                if (values.length === headers.length) {
+                    const entry = {};
+                    headers.forEach((header, index) => {
+                        entry[header] = values[index];
+                    });
+                    data.push(entry);
+                }
+            }
+            
+            currentHeaders = headers;
+            currentData = data;
+            generateTable(headers, data);
+        }
+        
+        function detectSeparator(line) {
+            const separators = [',', ';', '|', '\t'];
+            let maxCount = 0;
+            let detectedSeparator = ',';
+            
+            for (const sep of separators) {
+                const count = line.split(sep).length - 1;
+                if (count > maxCount) {
+                    maxCount = count;
+                    detectedSeparator = sep;
+                }
+            }
+            
+            return detectedSeparator;
+        }
+        
+        function processExcelData(excelData) {
+            if (excelData.length === 0) {
+                alert('Aucune donnée trouvée dans le fichier.');
+                return;
+            }
+            
+            const headers = excelData[0].map(header => header.toString().trim());
+            const data = [];
+
+            for (let i = 1; i < excelData.length; i++) {
+                const values = excelData[i];
+                if (!values || values.length === 0) continue;
+                
+                const entry = {};
+                headers.forEach((header, index) => {
+                    entry[header] = values[index] !== undefined ? values[index].toString().trim() + ' ' : ''; // Ajout d'un espace après chaque valeur
+                });
+                data.push(entry);
+            }
+            
+            currentHeaders = headers;
+            currentData = data;
+            generateTable(headers, data);
+        }
+        
+        function generateTable(headers, data) {
+            const oldStyle = document.querySelector('style[data-dynamic-style]');
+            if (oldStyle) oldStyle.remove();
+            
+            pagesContainer.innerHTML = '';
+            
+            if (!data || data.length === 0) {
+                pagesContainer.innerHTML = '<p>Aucune donnée à afficher.</p>';
+                return;
+            }
+            
+            const margin = `${marginValue.value}${marginUnit.value}`;
+            const padding = `${paddingValue.value}${paddingUnit.value}`;
+            const cellHeightVal = `${cellHeight.value}${cellHeightUnit.value}`;
+            const cellWidthVal = `${cellWidth.value}${cellWidthUnit.value}`;
+            const fontSizeVal = `${fontSize.value}${fontSizeUnit.value}`;
+            const position = tablePosition.value;
+            const align = textAlign.value;
+            
+            const style = document.createElement('style');
+            style.setAttribute('data-dynamic-style', 'true');
+            style.textContent = `
+                .page {
+                    margin: ${margin};
+                    padding: ${padding};
+                    box-sizing: border-box;
+                    width: 210mm;
+                    height: 297mm;
+                    display: flex;
+                    flex-direction: column;
+                    position: relative;
+                }
+                
+                .page-table-container {
+                    display: flex;
+                    justify-content: ${position === 'center' ? 'center' : position === 'left' ? 'flex-start' : 'flex-end'};
+                    width: 100%;
+                    flex-grow: 1;
+                    overflow: hidden;
+                }
+                
+                table {
+                    border-collapse: collapse;
+                    width: auto;
+                    margin: 0;
+                }
+                
+                td {
+                    height: ${cellHeightVal};
+                    width: ${cellWidthVal};
+                    font-size: ${fontSizeVal};
+                    text-align: ${align};
+                    border: 1px solid #000;
+                    padding: 2px;
+                    vertical-align: top;
+                    overflow: hidden;
+                }
+                
+                td div {
+                    margin-bottom: 3px;
+                    word-break: break-word;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            const page = document.createElement('div');
+            page.className = 'page';
+            
+            const pageContent = document.createElement('div');
+            pageContent.className = 'page-content';
+            
+            const tableContainer = document.createElement('div');
+            tableContainer.className = 'page-table-container';
+            
+            const table = document.createElement('table');
+            
+            // Création des lignes et cellules
+            for (let i = 0; i < data.length; i++) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                
+                const item = data[i];
+                let cellContent = '';
+                headers.forEach(header => {
+                    if (item[header]) {
+                        cellContent += `<div><strong>${header}:</strong><br>${item[header]}</div>`;
+                    }
+                });
+                
+                cell.innerHTML = cellContent;
+                row.appendChild(cell);
+                table.appendChild(row);
+            }
+            
+            tableContainer.appendChild(table);
+            pageContent.appendChild(tableContainer);
+            page.appendChild(pageContent);
+            pagesContainer.appendChild(page);
+        }
+        
+        function printDocument() {
+            if (!currentData) {
+                alert('Veuillez d\'abord charger un fichier.');
+                return;
+            }
+            
+            // Appliquer les styles d'impression avant d'imprimer
+            const printStyles = document.createElement('style');
+            printStyles.textContent = `
+                @page {
+                    size: A4;
+                    margin: 0;
+                }
+                
+                body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                
+                .page {
+                    page-break-after: always;
+                    margin: 0 !important;
+                }
+            `;
+            document.head.appendChild(printStyles);
+            
+            window.print();
+            
+            // Supprimer les styles d'impression après l'impression
+            setTimeout(() => {
+                printStyles.remove();
+            }, 1000);
+        }
+    });
+    </script>
+</body>
+</html>  

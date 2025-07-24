@@ -223,6 +223,99 @@ td {
     width: 100%;
 }
 
+
+/* Supprimer le pied de page (page-number) */
+.page-number {
+    display: none;
+}
+
+/* Modifier les marges et padding pour l'impression */
+@media print {
+    body, .container {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .page-content {
+        padding: 0 !important;
+    }
+    
+    /* Assurer que la table prend toute la page */
+    .page-table-container {
+        height: 100% !important;
+        justify-content: flex-start !important;
+    }
+}
+
+/* Modifier le padding de base */
+.page-content {
+    padding: 0; /* Modifié depuis la valeur précédente */
+}
+
+/* Ajuster la table pour qu'elle prenne toute la place */
+table {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+
+/* MODIFICATION 2 */
+/* Ajoutez ceci dans votre section CSS */
+/* .page {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.page-content {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.page-table-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+@media print {
+    .page {
+        height: 297mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .page-table-container {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    table {
+        margin-top: 0 !important;
+    }
+} */
+
+
+/* ================================ */
+
+
+/* MODIFICATION 3 */
+.page-table-container {
+    width: calc(100% - 2 * var(--margin-x, 0));
+    height: calc(100% - 2 * var(--margin-y, 0));
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Changé de 'center' à 'flex-start' */
+    margin: 0;
+}
+
+@media print {
+    .page-table-container {
+        margin: var(--margin-y, 0) var(--margin-x, 0) !important;
+    }
+}
+
+
 @media print {
     body * {
         visibility: hidden;
